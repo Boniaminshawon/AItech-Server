@@ -27,6 +27,20 @@ async function run() {
         await client.connect();
         const servicesCollection = client.db('AItech').collection('services');
         const reviewCollection = client.db('AItech').collection('reviews');
+
+
+        // service related api
+        app.get('/services', async (req, res) => {
+            const result = await servicesCollection.find().toArray();
+            res.send(result);
+        })
+
+        // review related api
+        app.get('/reviews', async (req, res) => {
+            const result = await reviewCollection.find().toArray();
+            res.send(result);
+        })
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
