@@ -27,11 +27,19 @@ async function run() {
         await client.connect();
         const servicesCollection = client.db('AItech').collection('services');
         const reviewCollection = client.db('AItech').collection('reviews');
+        const blogCollection = client.db('AItech').collection('blogs');
 
 
         // service related api
         app.get('/services', async (req, res) => {
             const result = await servicesCollection.find().toArray();
+            res.send(result);
+        })
+
+        // blog related api
+
+        app.get('/blogs', async (req, res) => {
+            const result = await blogCollection.find().toArray();
             res.send(result);
         })
 
