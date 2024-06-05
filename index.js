@@ -29,6 +29,7 @@ async function run() {
         const servicesCollection = client.db('AItech').collection('services');
         const reviewCollection = client.db('AItech').collection('reviews');
         const blogCollection = client.db('AItech').collection('blogs');
+        const userCollection = client.db('AItech').collection('users');
 
         // jwt related api 
         app.post('/jwt', async (req, res) => {
@@ -37,8 +38,8 @@ async function run() {
             res.send({ token });
         })
 
-          // middleware
-          const verifyToken = (req, res, next) => {
+        // middleware
+        const verifyToken = (req, res, next) => {
             // console.log('inside verify token', req.headers.authorization);
             if (!req.headers.authorization) {
                 return res.status(401).send({ message: 'unauthorized access' })
@@ -53,6 +54,15 @@ async function run() {
             })
 
         }
+
+        // user related api
+        app.post('/user', async (req, res) => {
+            const userInfo = req.body;
+            const result = await userCollection.insertOne(userInfo);
+            
+            res.send(result);
+
+        })
 
         // service related api
         app.get('/services', async (req, res) => {
