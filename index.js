@@ -55,11 +55,54 @@ async function run() {
 
         }
 
+        // use verify admin after verify token
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const isAdmin = user?.role === 'admin';
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+
+        }
+
+        // use verify HR after verify token
+        const verifyHr = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const isHR = user?.role === 'HR';
+            if (!isHR) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+
+        }
+
+        // use verify employee after verify token
+        const verifyEmployee = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const isEmployee = user?.role === 'Employee';
+            if (!isEmployee) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+
+        }
+
         // user related api
         app.post('/user', async (req, res) => {
             const userInfo = req.body;
+            const query = { email: userInfo.email };
+            const existingUser = await userCollection.findOne(query);
+            if (existingUser) {
+                return res.send({ message: 'user already exists', insertedId: null })
+            }
             const result = await userCollection.insertOne(userInfo);
-            
             res.send(result);
 
         })
