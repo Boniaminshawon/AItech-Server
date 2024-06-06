@@ -105,7 +105,55 @@ async function run() {
             const result = await userCollection.insertOne(userInfo);
             res.send(result);
 
+        });
+        
+        // get admin
+        app.get('/user/admin/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let admin = false;
+            if (user) {
+                admin = user?.role === 'admin';
+            }
+            res.send({ admin });
+        });
+
+        // get HR
+        app.get('/user/HR/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let HR = false;
+            if (user) {
+                HR = user?.role === 'HR';
+            }
+            res.send({ HR });
         })
+
+        // get employee
+        app.get('/user/employee/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let employee = false;
+            if (user) {
+                employee = user?.role === 'Employee';
+            }
+            res.send({ employee });
+        })
+
+
+
 
         // service related api
         app.get('/services', async (req, res) => {
