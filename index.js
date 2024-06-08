@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ihwvydu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -25,11 +25,12 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         const servicesCollection = client.db('AItech').collection('services');
         const reviewCollection = client.db('AItech').collection('reviews');
         const blogCollection = client.db('AItech').collection('blogs');
         const userCollection = client.db('AItech').collection('users');
+        const employeeWorkInfoCollection = client.db('AItech').collection('employeeWorkInfo');
 
         // jwt related api 
         app.post('/jwt', async (req, res) => {
@@ -106,7 +107,7 @@ async function run() {
             res.send(result);
 
         });
-        
+
         // get admin
         app.get('/user/admin/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
@@ -122,6 +123,9 @@ async function run() {
             res.send({ admin });
         });
 
+
+        // HR related api
+
         // get HR
         app.get('/user/HR/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
@@ -135,7 +139,20 @@ async function run() {
                 HR = user?.role === 'HR';
             }
             res.send({ HR });
+        });
+        // get all employee for employee list for hr
+        app.get('/user/employee-list', verifyToken, verifyHr, async (req, res) => {
+            // const role = req.params.role;
+            // const role= 'Employee'
+            const result = await userCollection.find({ role: 'Employee' }).toArray();
+            // const result = await userCollection.find({ role: { $in: ['Employee', 'HR'] } }).toArray();
+            res.send(result);
         })
+
+
+
+
+        // employee related api
 
         // get employee
         app.get('/user/employee/:email', verifyToken, async (req, res) => {
@@ -150,9 +167,20 @@ async function run() {
                 employee = user?.role === 'Employee';
             }
             res.send({ employee });
-        })
+        });
 
+        // post employees work info
+        app.post('/employee-work-info', verifyToken, verifyEmployee, async (req, res) => {
+            const workInfo = req.body;
+            const result = await employeeWorkInfoCollection.insertOne(workInfo);
+            res.send(result);
+        });
 
+        app.get('/employee-work-info', verifyToken, verifyEmployee, async (req, res) => {
+
+            const result = await employeeWorkInfoCollection.find().toArray();
+            res.send(result);
+        });
 
 
         // service related api
@@ -166,6 +194,12 @@ async function run() {
         app.get('/blogs', async (req, res) => {
             const result = await blogCollection.find().toArray();
             res.send(result);
+        });
+        app.get('/blog/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await blogCollection.findOne(query);
+            res.send(result);
         })
 
         // review related api
@@ -175,8 +209,8 @@ async function run() {
         })
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
