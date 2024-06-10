@@ -122,9 +122,24 @@ async function run() {
             }
             res.send({ admin });
         });
+        app.get('/user/employee-HR', verifyToken, verifyAdmin, async (req, res) => {
+            // const role = req.params.role;
+            // const role= 'Employee'
+            const query = {
+                $or: [
+                    { role: 'HR' },
+                    { role: 'Employee', isVarified: true }
+                ]
+            };
+            const result = await userCollection.find(query).toArray();
+            // const result = await userCollection.find({ role: { $in: ['Employee', 'HR'] } }).toArray();
+            res.send(result);
+        });
+       
 
 
         // HR related api
+     
 
         // get HR
         app.get('/user/HR/:email', verifyToken, async (req, res) => {
@@ -146,6 +161,27 @@ async function run() {
             // const role= 'Employee'
             const result = await userCollection.find({ role: 'Employee' }).toArray();
             // const result = await userCollection.find({ role: { $in: ['Employee', 'HR'] } }).toArray();
+            res.send(result);
+        });
+        app.get('/employee/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const result = await userCollection.findOne(filter);
+
+            res.send(result);
+        })
+        app.patch('/user/employee-list/:id', verifyToken, verifyHr, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const varified = req.body;
+
+            const updatedDoc = {
+                $set: {
+                    isVarified: varified.isVarified
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc, { upsert: true });
+
             res.send(result);
         })
 
@@ -176,9 +212,9 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/employee-work-info', verifyToken, verifyEmployee, async (req, res) => {
-
-            const result = await employeeWorkInfoCollection.find().toArray();
+        app.get('/employee-work-info/:email', verifyToken, verifyEmployee, async (req, res) => {
+            const query = { email: req.params.email };
+            const result = await employeeWorkInfoCollection.find(query).toArray();
             res.send(result);
         });
 
@@ -197,8 +233,8 @@ async function run() {
         });
         app.get('/blog/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await blogCollection.findOne(query);
+            const filter = { _id: new ObjectId(id) };
+            const result = await blogCollection.findOne(filter);
             res.send(result);
         })
 
