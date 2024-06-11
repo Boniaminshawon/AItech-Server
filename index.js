@@ -3,6 +3,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const app = express();
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -107,6 +108,13 @@ async function run() {
             res.send(result);
 
         });
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await userCollection.findOne(query);
+            res.send(result);
+         
+        })
 
         // get admin
         app.get('/user/admin/:email', verifyToken, async (req, res) => {
@@ -135,11 +143,36 @@ async function run() {
             // const result = await userCollection.find({ role: { $in: ['Employee', 'HR'] } }).toArray();
             res.send(result);
         });
-       
+        app.patch('/employee/hr/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    role: 'HR'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        });
+        app.patch('/fired/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const fired = req.body;
+            console.log(fired)
+
+            const updatedDoc = {
+                $set: {
+                    isFired: fired.isFired
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc, { upsert: true });
+
+            res.send(result);
+        })
 
 
         // HR related api
-     
+
 
         // get HR
         app.get('/user/HR/:email', verifyToken, async (req, res) => {
@@ -243,6 +276,22 @@ async function run() {
             const result = await reviewCollection.find().toArray();
             res.send(result);
         })
+
+          // payment intent
+          app.post('/create-payment-intent', async (req, res) => {
+            const { salary } = req.body;
+            const amount = parseInt(salary * 100);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
