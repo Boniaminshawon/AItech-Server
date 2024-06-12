@@ -230,7 +230,7 @@ async function run() {
             res.send(result);
         })
         // get all work records of employee
-        app.get('/employee-work-info',verifyToken,verifyHr, async (req,res)=>{
+        app.get('/employee-work-info', verifyToken, verifyHr, async (req, res) => {
             const result = await employeeWorkInfoCollection.find().toArray();
             res.send(result);
         })
@@ -272,7 +272,7 @@ async function run() {
         app.get('/salary/:email', async (req, res) => {
             const query = { email: req.params.email };
             const result = await paymentCollection.find(query).toArray();
-         
+
             res.send(result);
 
         })
@@ -320,8 +320,21 @@ async function run() {
         // post payment info
         app.post('/payment', verifyToken, verifyHr, async (req, res) => {
             const data = req.body;
+            // check if its a duplicate request
+            const query = {
+                email: data.email,
+                month: data.month,
+                year: data.year
+            }
+            const alreadyExist = await paymentCollection.findOne(query)
+        
+            if (alreadyExist) {
+                return res
+                    .status(400)
+                    .send('You have already payment for this month.')
+            }
             const result = await paymentCollection.insertOne(data);
-            console.log(result);
+         
             res.send(result);
         })
 
