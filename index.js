@@ -32,6 +32,7 @@ async function run() {
         const blogCollection = client.db('AItech').collection('blogs');
         const userCollection = client.db('AItech').collection('users');
         const employeeWorkInfoCollection = client.db('AItech').collection('employeeWorkInfo');
+        const paymentCollection = client.db('AItech').collection('paymentInfo');
 
         // jwt related api 
         app.post('/jwt', async (req, res) => {
@@ -113,7 +114,7 @@ async function run() {
             const query = { email: email }
             const result = await userCollection.findOne(query);
             res.send(result);
-         
+
         })
 
         // get admin
@@ -169,7 +170,18 @@ async function run() {
 
             res.send(result);
         })
-
+        app.patch('/update-salary/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateSalary = req.body;
+            const updatedDoc = {
+                $set: {
+                    salary: updateSalary.updatedSalary
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
 
         // HR related api
 
@@ -217,6 +229,11 @@ async function run() {
 
             res.send(result);
         })
+        // get all work records of employee
+        app.get('/employee-work-info',verifyToken,verifyHr, async (req,res)=>{
+            const result = await employeeWorkInfoCollection.find().toArray();
+            res.send(result);
+        })
 
 
 
@@ -238,6 +255,7 @@ async function run() {
             res.send({ employee });
         });
 
+
         // post employees work info
         app.post('/employee-work-info', verifyToken, verifyEmployee, async (req, res) => {
             const workInfo = req.body;
@@ -250,6 +268,14 @@ async function run() {
             const result = await employeeWorkInfoCollection.find(query).toArray();
             res.send(result);
         });
+        // get salary history
+        app.get('/salary/:email', async (req, res) => {
+            const query = { email: req.params.email };
+            const result = await paymentCollection.find(query).toArray();
+         
+            res.send(result);
+
+        })
 
 
         // service related api
@@ -277,8 +303,8 @@ async function run() {
             res.send(result);
         })
 
-          // payment intent
-          app.post('/create-payment-intent', async (req, res) => {
+        // payment intent
+        app.post('/create-payment-intent', async (req, res) => {
             const { salary } = req.body;
             const amount = parseInt(salary * 100);
 
@@ -290,6 +316,13 @@ async function run() {
             res.send({
                 clientSecret: paymentIntent.client_secret
             })
+        })
+        // post payment info
+        app.post('/payment', verifyToken, verifyHr, async (req, res) => {
+            const data = req.body;
+            const result = await paymentCollection.insertOne(data);
+            console.log(result);
+            res.send(result);
         })
 
 
